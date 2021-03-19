@@ -105,7 +105,11 @@ def stations():
     # Make list of results
     all_stations = list(np.ravel(station_results))
 
-    return jsonify(all_stations)
+    station_dict = {
+        'station': all_stations
+    }
+
+    return jsonify(station_dict)
 
 # Make tobs route
 @app.route('/api/v1.0/tobs')
@@ -118,19 +122,13 @@ def tobs():
         group_by(measurement.station).\
         order_by(desc(func.count(measurement.tobs))).all()
 
-    session.close()
-
     # Extract most most active station from result
     most_active_station = station_freq[0][1]
-
-    session = Session(engine)
 
     # Find last measurement of most active station
     active_last_date = session.query(measurement.date).\
         order_by(measurement.date.desc()).\
         filter(measurement.station == most_active_station).first()
-
-    session.close()
 
     # Extract date from list
     active_last_date = active_last_date[0]
@@ -141,8 +139,6 @@ def tobs():
     active_first_date = dt.date(int(active_last_date[0]),
         int(active_last_date[1]),
         int(active_last_date[2])) - dt.timedelta(days=365)
-
-    session = Session(engine)
 
     # Query measurement data using first date filter
     active_measurement_results = session.query(measurement.date, measurement.tobs).\
